@@ -10,7 +10,7 @@ This is a [Nim](https://nim-lang.org) implementation of the paper
 - this version requires a X64-CPU with AVX2-support. Support for other SIMD-variants (AArch64, RISC-V, AVX10) might be done as soon as i find a suitable dev- and test-environment. So maybe you better do-it-yourself :) There is not much SIMD-intrinsics-code in here. See the intrinsic-operations at the end of Inoues-paper and `./src/util_simd_avx2.nim`
 - the supported Cache key- and value-types are `int64` or `uint64` only.
 - A zero-value `0` is not a valid key - instead the zero-value represents a deleted-key a.k.a. empty-slot.
-- the concurrent-version `-d:multithreaded`uses a naive spin-lock. This might be done more efficiently.
+- the concurrent-version `-d:multi` uses a naive spin-lock. This might be done more efficiently.
 
 ### Compile-Options
 
