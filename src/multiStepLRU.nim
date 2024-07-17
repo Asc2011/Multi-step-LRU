@@ -499,7 +499,8 @@ proc unset*[K,V]( lru :Cache[K,V], k :K ) =
   # DONE: wrap in template
   multithreaded:
     var msg = fmt"  ::unset start has open lock ! {q.bucketIdx=}"
-    assert lru.locks[q.bucketIdx].load( Acquire ) == true, msg
+    #assert lru.locks[q.bucketIdx].load( Acquire ) == true, msg
+    assert lru.locks[q.bucketIdx].load( moAcquire ) == true, msg
 
   if not q.found :
     dbg: echo fmt"  key-{k} not in {q.bucketIdx=}"
@@ -521,7 +522,8 @@ proc unset*[K,V]( lru :Cache[K,V], k :K ) =
 
   multithreaded:
     msg = fmt"  ::unset has open lock ! {q.bucketIdx=}"
-    assert lru.locks[q.bucketIdx].load( Acquire ) == true, msg
+    #assert lru.locks[q.bucketIdx].load( Acquire ) == true, msg
+    assert lru.locks[q.bucketIdx].load( moAcquire ) == true, msg
 
   lru.unlockBucket( q )
   dbg:

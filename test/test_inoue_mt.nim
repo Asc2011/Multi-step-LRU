@@ -12,7 +12,8 @@ import std/[
 ]
 
 # TODO: maybe change to std/atomics
-import threading/atomics
+# import threading/atomics
+
 import ../src/multiStepLRU
 import ../src/prettyPrint
 
@@ -36,7 +37,7 @@ var
   threadCount {.global.} :int
 
   ds        :Cache[int64, int64]
-  slots     :Atomic[int] = Atomic[int](1)
+  slots     :Atomic[int]  # = Atomic[int](1)  # TODO: ugly, howto init a std/atomics ?
  
   thr       :array[ 16, Thread[int] ] # thread-array
   stats     :array[ 16, tstat ]       # results-array
@@ -47,6 +48,7 @@ var
   thTime   {.threadvar.} :array[2, int64]
   inCache  {.threadvar.} :HashSet[int64]
 
+slots.store 1
 
 proc mkSet( s :int ) :HashSet[int] =
   while result.len <= s :
@@ -229,8 +231,8 @@ proc test_cache( setLen :int, tc :int = 1 ) =
   echo fmt"{tc}-threads {ops.sep}-ops {t}-ms | {ops div t}-op/ms"
 
   profile:
-    echo $ds
-    inoue_mt.stat.ppStats
+    echo "\n", $ds
+    multiStepLRU.stat.ppStats
 
   dbg:
     var x = 25
@@ -249,7 +251,7 @@ when isMainModule:
 
   let cacheSize =    20_000 # 2x4 = times 8 => slotCount 160_000
   let setSize   = 1_000_000 # size of data-set, will be 4-times in th_work
-  threadCount   = 3
+  threadCount   = 4
 
   ds = initCache[int64, int64]( cacheSize, 2, 4 )
   echo fmt"Test of '{$ds.typeof}' setSize-{cacheSize}"
