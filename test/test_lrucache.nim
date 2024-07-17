@@ -4,16 +4,15 @@ import std/[
   unicode,
   random,
   sets,
-  #bitops,
   sequtils,
-  #strutils,
   strformat,
   math
 ]
-import threading/atomics
+# import threading/atomics
+import std/atomics
 import lrucache
 
-from prettyPrint import sep
+from ../src/prettyPrint import sep
 
 template dbg*( body :untyped ) :untyped =
   when defined( debug ) :
@@ -37,7 +36,7 @@ var
   threadCount {.global.} :int
 
   ds        :LRUCache[int64, int64]
-  slots     :Atomic[int] = Atomic[int](1)
+  slots     :Atomic[int] # = Atomic[int](1)
  
   thr       :array[ 16, Thread[int] ] # thread-array
   stats     :array[ 16, tstat ]       # results-array
@@ -48,6 +47,8 @@ var
   thValues {.threadvar.} :seq[int]
   thTime   {.threadvar.} :array[2, int64]
   inCache  {.threadvar.} :HashSet[int64]
+
+slots.store 1
 
 
 proc mkSet( s :int ) :HashSet[int] =
@@ -181,8 +182,9 @@ proc test_cache( setLen :int, tc :int = 1 ) =
  
 
 when isMainModule:
-  let setSize   = 150_000
-  let cacheSize =  50_000
+
+  let cacheSize = 160_000
+  let setSize   = 480_000
 
   ds = newLRUCache[int64, int64]( cacheSize )
   echo fmt"Test of '{$ds.typeof}' setSize-{cacheSize}"

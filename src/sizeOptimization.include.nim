@@ -1,4 +1,4 @@
-#[
+##[
   Cache-Usage-Optimization
 
   Instead of simply removing a key, and leaving
@@ -12,8 +12,7 @@
   E.g. when removing key-3 :
 
   before: mru-{1 2 3 4}-lru del(3) -> mru-{1 2 4 0}-lru :after
-
-]#
+]##
 
 if q.isLRU : # q.slot == 3 for 2x4-Cache
   #
