@@ -4,10 +4,9 @@
 # - cache-line-detection in CPUID
 # - maybe more ?
 #
-import ../../lockless
 
 static:
-  when defined(multi) and not compileOption("mm","atomicArc") :
+  when defined(multi) and not compileOption("mm", "atomicArc") :
     echo "In multi-threaded-mode you MUST use '--mm:atomicArc'."
     quit(1)
 
@@ -15,23 +14,28 @@ static:
 import nimsimd/[ avx2 ]
 # import murmur3
 
-import std/[ strformat ]
+import std/[
+  atomics,
+  strformat,
+  bitops,
+  hashes
+]
 
-# TODO: decide the import on avail °SIMD-Vector-width
+# TODO: decide the import on avail SIMD-Vector-width
 #
-import ./util_simd_avx2   #  minimal SIMD-wrappers
+import ./util_simd_avx2   #  minimal SIMD-wrappers for AVX2
 # TODO: try a NEON-version 'util_simd_neon'
 
 import ./utils            #
+export atomics            # TODO: maybe use std/atomics if possible
 
-export atomics            # move to std/atomics if possible
 export avx2
 export util_simd_avx2
 
 profile:
   var stat* {.global.} :array[ 8, Atomic[int] ]
 
-# TODO: still needed ??
+# TODO: still needed ?
 converter toUint64( x :int64  ) :uint64 = x.uint64
 converter toInt64(  x :uint64 ) :int64  = x.int64
 
@@ -45,13 +49,12 @@ when defined(gcc) or defined(clang) :
 
 type UArr[T] = UncheckedArray[T]
 
-# FUTURE:  provide the cache-geometry maybe as module-global or
-# the Query-obj needs a reference to the CacheObj.
+# FUTURE:  provide the cache-geometry maybe as module-global or the Query-obj needs a reference to the CacheObj.
 #
 
 # the Query[K,V]-Object
 #
-include ./queryObj.inc.nim
+include ./queryObject.include.nim
 
 
 type
@@ -61,6 +64,7 @@ type
     ks :array[(64 div K.sizeof), K],    #   keys-bucket = 2 x M256i(32-byte) == 64
     vs :array[(64 div V.sizeof), V]     # values-bucket = 2 x M256i(32-byte) == 64
   ]]
+
 
 type
   CacheObj[K,V] = object
@@ -88,7 +92,7 @@ func setLengthBytes*[K,V]( lru :Cache[K,V] ) :int =
   # length of one Key-/Value-Set in bytes. Must be aligned(64) and
   # setLengthBytes mod 64 == 0
   #
-  # FUTURE: alignment on X86-cacheline-width is typically 64-bytes. CPUID/NimSIMD can detect it.
+  # FUTURE: alignment on X86-cacheline-width is typically 64-bytes. CPUID/NimSIMD can detect this.
   # On ARM/AppleSillicon its 128-bytes. RISC-V & others ?
   #
   result = ( K.sizeof + V.sizeof ) * ( lru.vecLen * lru.vecCount )
@@ -106,7 +110,9 @@ when defined( multi ) :
   # spin-lock for multi-threaded-mode
   #
   proc lockBucket*[K,V]( lru :Cache[K,V], bucketIdx :int ) :bool =
+    #
     # a naive spin-lock
+    #
     while lru.locks[ bucketIdx ].exchange( true ) : discard
     return true
 
@@ -506,7 +512,7 @@ proc unset*[K,V]( lru :Cache[K,V], k :K ) =
 
   #when compileOption( "opt", "size" ):
   when defined( increaseCacheUsage ) :
-    include ./sizeOptimization.inc.nim
+    include ./sizeOptimization.include.nim
   else : # -d:increaseCacheUsage NOT set.
     #
     lru.buckets[ q.bucketIdx ].ks[ q.slotIdx ] = 0
