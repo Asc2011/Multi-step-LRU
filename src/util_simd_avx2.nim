@@ -5,9 +5,9 @@ import nimsimd/[ avx2, BMI1 ]
 let zeroVec* = mm256_set1_epi64x( 0 )
 
 # not used
-func isAligned*( pt :pointer ) :bool =
+func isAligned*( pt :pointer, l :int = 64 ) :bool =
   let locAddr = cast[int]( pt )
-  result = locAddr mod 64 == 0
+  result = locAddr mod l == 0
 
 
 when defined(gcc) or defined(clang) :

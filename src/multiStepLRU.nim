@@ -49,7 +49,7 @@ when defined(gcc) or defined(clang) :
 
 type UArr[T] = UncheckedArray[T]
 
-# FUTURE:  provide the cache-geometry maybe as module-global or the Query-obj needs a reference to the CacheObj.
+# FUTURE: provide the cache-geometry maybe as module-global or the Query-object needs a reference to the CacheObj.
 #
 
 # the Query[K,V]-Object
@@ -59,7 +59,7 @@ include ./queryObject.include.nim
 
 type
   # TODO: Howto make this a template with dynamic array-length ?
-  # FUTURE: bucket-region & locks-region into one allocation..
+  # FUTURE: combine bucket-region & locks-region into one allocation.
   KVSets[K,V] = UArr[ tuple[
     ks :array[(64 div K.sizeof), K],    #   keys-bucket = 2 x M256i(32-byte) == 64
     vs :array[(64 div V.sizeof), V]     # values-bucket = 2 x M256i(32-byte) == 64
@@ -93,7 +93,7 @@ func setLengthBytes*[K,V]( lru :Cache[K,V] ) :int =
   # setLengthBytes mod 64 == 0
   #
   # FUTURE: alignment on X86-cacheline-width is typically 64-bytes. CPUID/NimSIMD can detect this.
-  # On ARM/AppleSillicon its 128-bytes. RISC-V & others ?
+  # TODO: On ARM/AppleSillicon its 128-bytes. RISC-V & others ?
   #
   result = ( K.sizeof + V.sizeof ) * ( lru.vecLen * lru.vecCount )
   assert result mod 64 == 0
@@ -287,6 +287,7 @@ proc put*[K,V](   lru :Cache[K,V], k :K, v :V ) =
 
     # TODO: Should a value-update promote/reset the key-position or leave it as is ?
     # unclear, check case if value was changed ?
+    #
     when defined( increaseCacheUsage ) :
       #dbg: echo "-d: increaseCacheUsage"
       # the bucket must stay locked !
@@ -582,7 +583,7 @@ proc initCache*[K, V]( cap, vecCount, vecLen :int ) :Cache[K,V] =
 
 
 proc `=destroy`*[K,V]( lru :CacheObj[K,V] ) =
-  debugEcho "=destroying -> ", $lru
+  debugEcho "=destroy -> ", $lru
   multithreaded:
     deallocShared lru.locks
   mm_free lru.buckets
@@ -596,12 +597,24 @@ proc ppBkt*[K,V]( lru :Cache[K,V], bkt :int, withVals :bool = false ) =
     echo fmt"bkt-{bkt} vals-", lru.buckets[bkt].vs
 
 
+proc makeMembersForBucket[K,V]( lru: Cache[K,V], bucket :int, cnt: int = 16 ) :seq[ K ] =
+  var key :K
+  key.inc
+  echo fmt"adding {bucket=}"
+  while result.len < cnt :
+    if lru.getBucketIdx( key ) == K(bucket) :
+      echo fmt"  {result.len}. adding {key=}"
+      result.add key
+    key.inc
+
+
 when isMainModule:
-  echo "./inoue_mt.nim :: main"
+  echo "./multiStepLRU.nim :: main"
   let lru = initCache[int64, int64]( 128, 2, 4 )
-  echo "byte-sizeof Cache ", sizeof(lru), " is aligned ", isAligned( lru[].addr )
-  let loc = cast[int]( lru[].cap )
-  echo "cap aligned 64 ? ", isAligned lru[].cap.addr
+
+  dbg:
+    echo "byte-sizeof Cache ", sizeof(lru), " is aligned ", isAligned( lru.addr )
+
   lru.put( 1, 11 )
   lru.put( 2, 12 )
   echo lru
@@ -706,12 +719,6 @@ when isMainModule:
   echo "\n"
   for i in 2..4 : lru.ppBkt(i, false)
 
-  # var i = 1100
-  # while true :
-  #   if lru.bucket( i.uint64 ) == 3 :
-  #     echo " ", i
-  #     break
-  #   i.inc
 
   echo lru
   echo "len-", lru.len, " cap-", lru.cap, " capacity-", lru.capacity, " setLength-", lru.setLengthBytes
@@ -724,6 +731,10 @@ when isMainModule:
 
 
   echo fmt"typeof {$lru.typeof} "
+
+  #var bkt4 = lru.makeMembersForBucket( 3, 10 )
+  #echo "bkt-4 members :: ", bkt4
+
   #lru[] = nil
   # TODO: should call destroy automatically ?
   # no leaks reported via `leaks`-tool.

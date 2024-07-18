@@ -1,36 +1,42 @@
 ## Multi-step LRU
 
-This is a pure [Nim](https://nim-lang.org) implementation of this [paper (click to download) : ](https://arxiv.org/pdf/2112.09981.pdf)
+This is a pure [Nim](https://nim-lang.org) implementation of the [paper (click to download) : ](https://arxiv.org/pdf/2112.09981.pdf)
 
 > H. Inoue, "Multi-step LRU: SIMD-based Cache Replacement for Lower Overhead and Higher Precision," 2021 IEEE International Conference on Big Data (Big Data), Orlando, FL, USA, 2021, pp. 174-180, doi: 10.1109/BigData52589.2021.9671363. keywords: {Conferences;Memory management;Metadata;Big Data;Throughput;Registers;History;Cache replacement;LRU;SIMD},
 
 
  ### Requirements and current Limitations 
  
-- this version requires a X64-CPU with AVX2-support. Support for other SIMD-variants (AArch64, RISC-V, AVX10) might be done as soon as i find a suitable dev- and test-environment. So maybe you better do-it-yourself :) There is not much SIMD-intrinsics-code in here. See the intrinsic-operations at the end of the paper and `./src/util_simd_avx2.nim`
-- atm the supported Cache key- and value-types are `int64` or `uint64` only.
-- a zero-value `0` is not a valid cache-key - instead the zero-value represents a deleted-key a.k.a. empty-slot.
-- the concurrent-version `-d:multi` uses a naive spin-lock. This might be done more efficiently.
+- this implementation requires a X64-CPU with AVX2-support. Support for other SIMD-variants (AArch64, RISC-V, AVX512) might be done as soon as i find a suitable dev- and test-environment. So you may decide to do-it-yourself :) There is not much SIMD-intrinsics-code in here. See the intrinsic-operations at the end of the paper and `src/util_simd_avx2.nim`
+- atm the supported `Cache[K,V]` key-/value-types are `int64` or `uint64` only.
+- a zero-key=`0` represents a deleted-key a.k.a. empty-slot. Thus a zero-key is *not a valid* cache-key.
+- the concurrent-version `-d:multi` uses a naive spin-lock. This could be done more efficiently. Lock-byte aligning might prevent false sharing on certain platforms in multithreaded-mode. 
 
 
 ### Compile-Options
 
 - `-d:multi --mm:atomicArc` enables threading-support. `atomicArc` **must** be set.
 - `-d:increaseCacheUsage` activates a usage optimization not found in H. Inoues paper. It does not allow for 'gaps' to appear inside vector-segments. Gapsmight occur when elements are deleted/zeroed from the cache. See remarks and example in `./src/sizeOptimization.include.nim` to understand the idea behind it.
-- `-d:debug` gives detailed step-by-step debug-infos.
-- `-d:profile` produces a detailed measurement of operations on the `Cache[K,V]` object.
+- `-d:debug` produces detailed step-by-step debug-infos.
+- `-d:profile` produces a detailed measurement of operations on the `Cache[K,V]`.
 
 
-### Compilation
+### Checkout and Compilation
+
+    git clone https://github.com/Asc2011/Multi-step-LRU.git
+    cd ./Multi-step-LRU
 
 #### single-threaded
-    `nim c -d:release ./test/test_multiStepLRU.nim`
+    nim c -d:release ./test/test_multiStepLRU.nim
 
 #### multi-threaded
-    `nim c -d:release -d:multi --mm:atomicArc ./test/test_multiStepLRU.nim`
+    nim c -d:release -d:multi --mm:atomicArc ./test/test_multiStepLRU.nim
 
-#### with increased cache usage ( concurrent )
-  `nim c -d:release -d:increaseCacheUsage -d:multi --mm:atomicArc ./test/test_multiStepLRU.nim`
+#### with optimized cache usage ( concurrent )
+    nim c -d:release -d:increaseCacheUsage -d:multi --mm:atomicArc ./test/test_multiStepLRU.nim
+
+
+### Preliminary results
 
 
 ### TODO 

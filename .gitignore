@@ -1,6 +1,7 @@
 nimcache/
 nimblecache/
 htmldocs/
+src/multiStepLRU
 test/test_multiStepLRU
 test/test_lrucache
 test/test_inoue_mt
