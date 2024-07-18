@@ -16,7 +16,7 @@ This is a pure [Nim](https://nim-lang.org) implementation of the [paper (click t
 ### Compile-Options
 
 - `-d:multi --mm:atomicArc` enables threading-support. `atomicArc` **must** be set.
-- `-d:increaseCacheUsage` activates a usage optimization not found in H. Inoues paper. It does not allow for 'gaps' to appear inside vector-segments. Gapsmight occur when elements are deleted/zeroed from the cache. See remarks and example in `./src/sizeOptimization.include.nim` to understand the idea behind it.
+- `-d:increaseCacheUsage` activates a usage optimization not found in H. Inoues paper. It does not allow for 'gaps' to appear inside vector-segments. Gaps might occur when a member is deleted from the cache via `.delete( key )`. See remarks and example in `./src/sizeOptimization.include.nim` to understand the idea behind it.
 - `-d:debug` produces detailed step-by-step debug-infos.
 - `-d:profile` produces a detailed measurement of operations on the `Cache[K,V]`.
 
@@ -38,10 +38,12 @@ This is a pure [Nim](https://nim-lang.org) implementation of the [paper (click t
 
 ### Preliminary results
 
+I can not yet reproduce the excellent thruput/hit-ratio numbers from H. Inoues paper. Since Multi-step-LRU does neither require a lock-free Hash-Map nor a lock-free Doubly-Linked-List a 'fair' comparison would stay in single-threaded mode.
+From a quick&dirty comparison against *LRUCache* from `github.com/jackhftang/lrucache` i can confirm a gain in thruput around 3-to-5-times during single-threaded mode (see `test/test_lrucache.nim`).    
+
 
 ### TODO 
-
-- [ ] bench against *a classic/single-threaded* LRU-implementation -> `github.com/jackhftang/lrucache`.
 - [ ] find a cache-trace and test/compare against the trace-data.
 - [ ] generate a zipfian-distribution and use it during testing.
+- [ ] bench against *a classic/single-threaded* LRU-implementation -> `github.com/jackhftang/lrucache`. Partly done, see `test/test_lrucache.nim`
 - [ ] maybe create some MarkDeep-schema.
