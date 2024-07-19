@@ -93,7 +93,7 @@ func setLengthBytes*[K,V]( lru :Cache[K,V] ) :int =
   # setLengthBytes mod 64 == 0
   #
   # FUTURE: alignment on X86-cacheline-width is typically 64-bytes. CPUID/NimSIMD can detect this.
-  # TODO: On ARM/AppleSillicon its 128-bytes. RISC-V & others ?
+  # TODO: On ARM/Apple-Sillycon is 128-bytes. RISC-V & others ?
   #
   result = ( K.sizeof + V.sizeof ) * ( lru.vecLen * lru.vecCount )
   assert result mod 64 == 0
@@ -567,7 +567,7 @@ proc initCache*[K, V]( cap, vecCount, vecLen :int ) :Cache[K,V] =
 
   result = new CacheObj[K,V]
   result[].buckets = cast[ ptr KVSets[K,V] ]( allocAligned( bytes, 64 ) )
-  
+
   profileAndDebug:
     echo fmt"{bytes div 1024}-KB key/value-space allocated (aligned=64)."
 
@@ -741,4 +741,3 @@ when isMainModule:
   #lru[].`=destroy`()
 
   echo "done.."
-

@@ -1,4 +1,3 @@
-
 import std/[
   monotimes,
   unicode,
@@ -11,7 +10,7 @@ import std/[
   math
 ]
 
-# TODO: maybe change to std/atomics
+# DONE: changed to std/atomics
 # import threading/atomics
 
 import ../src/multiStepLRU
@@ -27,9 +26,9 @@ template single*( tc :int, body :untyped ) :untyped =
   else :
     body
 
-randomize(678)
+randomize 678
 
-func tics() :int64 = getMonoTime().ticks
+func tics :int64 = getMonoTime().ticks
 
 type tstat = array[8, int]
 
@@ -38,7 +37,7 @@ var
 
   ds        :Cache[int64, int64]
   slots     :Atomic[int]  # = Atomic[int](1)  # TODO: ugly, howto init a std/atomics ?
- 
+
   thr       :array[ 16, Thread[int] ] # thread-array
   stats     :array[ 16, tstat ]       # results-array
 
@@ -64,8 +63,8 @@ proc th_work( setLen :int ) {.thread.} =
     thValues = mkSet( setLen ).toSeq
     echo fmt"thread-{thId} thValues.len-{thValues.len.sep} head-{$thValues[0] }"
 
-    var 
-      turns :int            # no of turns
+    var
+      turns :int            # number of turns
       thOps :tstat          # thread operations-counter
       tOps  :seq[ tstat ]   #
 
@@ -149,7 +148,7 @@ proc th_work( setLen :int ) {.thread.} =
         # echo "thread-",thId, " inCache.len-", inCache.card
         inCache.clear
         break
-    
+
     # simple stat-aggregate
     #
     var st :tstat
@@ -212,7 +211,7 @@ proc ppStats( arr :var array[8, Atomic[int] ] ) =
 
 proc test_cache( setLen :int, tc :int = 1 ) =
   echo "\n" & fmt"test '{$ds.typeof}' threads-{tc} dataSet={setLen.sep}"
-  let t0 = tics()  
+  let t0 = tics()
   for i in 1 .. tc :
     createThread( thr[i], th_work, setLen )
   joinThreads thr
@@ -245,7 +244,7 @@ proc test_cache( setLen :int, tc :int = 1 ) =
   ds.checkCache # paranoid consistency-test of all key/value-pairs
   ds.clear
   assert ds.len == 0, "not all slots cleared ?"
- 
+
 
 when isMainModule:
 
