@@ -4,11 +4,6 @@ This is a pure [Nim](https://nim-lang.org) implementation of the [paper (click t
 
 > H. Inoue, "Multi-step LRU: SIMD-based Cache Replacement for Lower Overhead and Higher Precision," 2021 IEEE International Conference on Big Data (Big Data), Orlando, FL, USA, 2021, pp. 174-180, doi: 10.1109/BigData52589.2021.9671363. keywords: {Conferences;Memory management;Metadata;Big Data;Throughput;Registers;History;Cache replacement;LRU;SIMD},
 
-> [!NOTE]
-> this code depends on `github.com/guzba/nimsimd`which has a pending pull-request-25. You can either wait for pull-request-25 to get accepted or use my nimsimd-branch-"ASC" from `gitbub.com/Asc2011/nimsimd`. I recommend to wait for the update in the official `guzba/nimsimd`-modul.
-
-
-
  ### Requirements and current Limitations
 - this implementation requires a X64-CPU with AVX2-support. Support for other SIMD-variants (AArch64, RISC-V, AVX512) might be done as soon as i find a suitable dev- and test-environment. So you may decide to do-it-yourself :) There is not much SIMD-intrinsics-code in here. See the intrinsic-operations at the end of the paper and `src/util_simd_avx2.nim`
 - atm the supported `Cache[K,V]` key-/value-types are `int64` or `uint64` only.
@@ -46,7 +41,7 @@ From a quick&dirty comparison against *LRUCache* from `github.com/jackhftang/lru
 
 
 ### TODO
-- [ ] wait for `github.com/guzba/nimsimd` to accept my pull-request or parts of it.
+- [x] wait for `github.com/guzba/nimsimd` version 1.2.11 to accept my pull-request or parts of it.
 - [ ] find a cache-trace and test/compare against the trace-data.
 - [ ] generate a zipfian-distribution and use it during testing.
 - [ ] bench against *a classic/single-threaded* LRU-implementation -> `github.com/jackhftang/lrucache`. Partly done, see `test/test_lrucache.nim`
